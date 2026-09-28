@@ -35,6 +35,7 @@ export const en = {
   'login.submit': 'Sign in',
   'login.submitting': 'Signing in…',
   'login.failed': 'Login failed',
+  'login.invalidCredentials': 'The user or password is incorrect.',
 
   'role.director': 'Director',
   'role.projectManager': 'Project Manager',
@@ -311,6 +312,7 @@ export const lt: Record<MessageKey, string> = {
   'login.submit': 'Prisijungti',
   'login.submitting': 'Jungiamasi…',
   'login.failed': 'Nepavyko prisijungti',
+  'login.invalidCredentials': 'Neteisingas vartotojas arba slaptažodis.',
 
   'role.director': 'Direktorius',
   'role.projectManager': 'Projekto vadovas',

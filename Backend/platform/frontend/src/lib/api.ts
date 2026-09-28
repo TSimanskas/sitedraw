@@ -55,14 +55,13 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     headers,
   })
 
-  if (response.status === 401) {
-    clearSession()
-    window.location.href = '/login'
-    throw new ApiError(401, 'Unauthorized')
-  }
-
   if (!response.ok) {
-    throw new ApiError(response.status, await parseError(response))
+    const message = await parseError(response)
+    if (response.status === 401 && path !== '/api/auth/login') {
+      clearSession()
+      window.location.href = '/login'
+    }
+    throw new ApiError(response.status, message)
   }
 
   if (response.status === 204) {

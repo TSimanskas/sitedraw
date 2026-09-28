@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { LanguageSwitcher } from '../components/LanguageSwitcher'
-import { api } from '../lib/api'
+import { api, ApiError } from '../lib/api'
 import { isAuthenticated, saveSession } from '../lib/auth'
 import { useI18n } from '../lib/LanguageContext'
 
@@ -10,7 +10,7 @@ export function LoginPage() {
   const { t } = useI18n()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  const [errorKey, setErrorKey] = useState<'login.invalidCredentials' | 'login.failed' | null>(null)
   const [loading, setLoading] = useState(false)
 
   if (isAuthenticated()) {
@@ -19,7 +19,7 @@ export function LoginPage() {
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
-    setError(null)
+    setErrorKey(null)
     setLoading(true)
 
     try {
@@ -27,7 +27,8 @@ export function LoginPage() {
       saveSession(response.token, response.user)
       navigate('/projects')
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('login.failed'))
+      const invalid = err instanceof ApiError && (err.status === 401 || err.status === 400)
+      setErrorKey(invalid ? 'login.invalidCredentials' : 'login.failed')
     } finally {
       setLoading(false)
     }
@@ -87,9 +88,9 @@ export function LoginPage() {
             />
           </label>
 
-          {error && (
+          {errorKey && (
             <div className="alert alert-error" role="alert">
-              {error}
+              {t(errorKey)}
             </div>
           )}
 
