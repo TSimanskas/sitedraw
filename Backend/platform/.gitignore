@@ -1,7 +1,7 @@
 HELP.md
 target/
 data/
-storage/
+/storage/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/

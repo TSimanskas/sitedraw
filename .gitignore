@@ -28,9 +28,9 @@ dist-ssr/
 .DS_Store
 Thumbs.db
 
-# Runtime data
-**/storage/
-**/data/
+# Runtime uploaded files and local H2 database (not Java source packages)
+Backend/platform/storage/
+Backend/platform/data/
 
 # Logs and archives
 *.log
