@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ProdDatasourceUrlTest {
 
@@ -54,10 +55,11 @@ class ProdDatasourceUrlTest {
     }
 
     @Test
-    void candidatesTryPrivateHostBeforePublic() {
+    void candidatesTryPrivateHostWithoutSslFirst() {
         var urls = ProdDatasourceUrl.candidates(
                 "jdbc:postgresql://dpg-example-a.frankfurt-postgres.render.com:5432/sitedraw_db");
         assertEquals("dpg-example-a:5432", ProdDatasourceUrl.hostForLog(urls.get(0)));
+        assertTrue(urls.get(0).contains("sslmode=disable"));
         assertEquals(
                 "dpg-example-a.frankfurt-postgres.render.com:5432",
                 ProdDatasourceUrl.hostForLog(urls.get(urls.size() - 1)));

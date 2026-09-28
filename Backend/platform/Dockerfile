@@ -12,7 +12,7 @@ FROM maven:3.9.9-eclipse-temurin-17 AS build
 WORKDIR /app
 COPY pom.xml ./
 RUN mvn -B -q dependency:go-offline || true
-ARG BUILD_ID=20260928-private-host
+ARG BUILD_ID=20260928-private-plain
 COPY src src
 COPY --from=ui /ui/dist src/main/resources/static
 RUN mvn -B package -DskipTests -q

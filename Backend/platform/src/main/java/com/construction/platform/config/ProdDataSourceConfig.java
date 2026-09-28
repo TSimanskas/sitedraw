@@ -29,11 +29,11 @@ public class ProdDataSourceConfig {
         if (urls.isEmpty()) {
             throw new IllegalStateException("SPRING_DATASOURCE_URL or DATABASE_URL is missing");
         }
-        logProbe(urls, username, password);
+        List<String> attempts = logProbe(urls, username, password);
         Exception last = null;
         for (String url : urls) {
             String host = ProdDatasourceUrl.hostForLog(url);
-            System.out.println("SiteDraw trying Postgres " + host);
+            log("SiteDraw trying Postgres " + host + " " + queryOf(url));
             HikariDataSource pool = null;
             try {
                 HikariConfig config = new HikariConfig();
@@ -44,35 +44,53 @@ public class ProdDataSourceConfig {
                 config.setMaximumPoolSize(5);
                 config.setConnectionTimeout(8_000);
                 pool = new HikariDataSource(config);
-                System.out.println("SiteDraw connected to Postgres via " + host);
+                log("SiteDraw connected to Postgres via " + host);
                 return pool;
             } catch (Exception ex) {
                 last = ex;
-                System.out.println("SiteDraw Postgres failed (" + host + "): " + rootMessage(ex));
+                String failure = host + " " + queryOf(url) + " -> " + rootMessage(ex);
+                attempts.add(failure);
+                log("SiteDraw Postgres failed " + failure);
                 if (pool != null) {
                     pool.close();
                 }
             }
         }
         throw new IllegalStateException(
-                "Could not open Postgres. Use the Internal hostname from the database Connect menu, "
-                        + "and confirm the web service region matches the database.",
+                "Could not open Postgres. user=" + username
+                        + " passwordChars=" + (password == null ? 0 : password.length())
+                        + " attempts=" + attempts,
                 last);
     }
 
-    private static void logProbe(List<String> urls, String username, String password) {
-        System.out.println("SiteDraw datasource user=" + username
+    private static List<String> logProbe(List<String> urls, String username, String password) {
+        List<String> attempts = new ArrayList<>();
+        log("SiteDraw datasource user=" + username
                 + " passwordChars=" + (password == null ? 0 : password.length()));
         List<String> hosts = new ArrayList<>(new LinkedHashSet<>(urls.stream()
                 .map(ProdDatasourceUrl::hostName)
                 .toList()));
         for (String host : hosts) {
             try {
-                System.out.println("SiteDraw DNS " + host + " -> " + InetAddress.getByName(host).getHostAddress());
+                String resolved = InetAddress.getByName(host).getHostAddress();
+                log("SiteDraw DNS " + host + " -> " + resolved);
+                attempts.add("DNS " + host + " -> " + resolved);
             } catch (Exception ex) {
-                System.out.println("SiteDraw DNS " + host + " FAILED: " + ex.getMessage());
+                log("SiteDraw DNS " + host + " FAILED: " + ex.getMessage());
+                attempts.add("DNS " + host + " FAILED: " + ex.getMessage());
             }
         }
+        return attempts;
+    }
+
+    private static String queryOf(String url) {
+        int q = url.indexOf('?');
+        return q >= 0 ? url.substring(q + 1) : "";
+    }
+
+    private static void log(String message) {
+        System.err.println(message);
+        System.err.flush();
     }
 
     private static String firstNonBlank(String... values) {

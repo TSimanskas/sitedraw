@@ -17,6 +17,7 @@ final class ProdDatasourceUrl {
 
     private static final Pattern RENDER_PUBLIC_HOST =
             Pattern.compile("^(dpg-[^.]+)\\.[a-z0-9-]+-postgres\\.render\\.com$");
+    private static final String SSL_OFF = "sslmode=disable&gssEncMode=disable";
     private static final String SSL_REQUIRE = "sslmode=require&gssEncMode=disable";
     private static final String SSL_PREFER = "sslmode=prefer&gssEncMode=disable";
     private static final String SSL_DIRECT = "sslmode=require&gssEncMode=disable&sslNegotiation=direct";
@@ -45,8 +46,9 @@ final class ProdDatasourceUrl {
         }
         String internal = toInternalJdbcUrl(normalized);
         if (internal != null) {
-            urls.add(internal);
+            urls.add(withQuery(internal, SSL_OFF));
             urls.add(withQuery(internal, SSL_PREFER));
+            urls.add(internal);
         }
         urls.add(withQuery(normalized, SSL_DIRECT));
         urls.add(normalized);
