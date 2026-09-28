@@ -1,5 +1,5 @@
 ALTER TABLE document_versions
-    ADD COLUMN calibration_pixels_per_unit DOUBLE;
+    ADD COLUMN calibration_pixels_per_unit DOUBLE PRECISION;
 ALTER TABLE document_versions
     ADD COLUMN calibration_unit_label VARCHAR(20);
 
