@@ -43,4 +43,23 @@ class ProdDatasourceUrlTest {
                 "dpg-example-a:5432",
                 ProdDatasourceUrl.hostForLog("jdbc:postgresql://user:pass@dpg-example-a:5432/db?sslmode=require"));
     }
+
+    @Test
+    void publicRenderHostRewritesToPrivateHostname() {
+        String internal = ProdDatasourceUrl.toInternalJdbcUrl(
+                "jdbc:postgresql://dpg-example-a.frankfurt-postgres.render.com:5432/sitedraw_db?sslmode=require");
+        assertEquals(
+                "jdbc:postgresql://dpg-example-a:5432/sitedraw_db?sslmode=require",
+                internal);
+    }
+
+    @Test
+    void candidatesTryPrivateHostBeforePublic() {
+        var urls = ProdDatasourceUrl.candidates(
+                "jdbc:postgresql://dpg-example-a.frankfurt-postgres.render.com:5432/sitedraw_db");
+        assertEquals("dpg-example-a:5432", ProdDatasourceUrl.hostForLog(urls.get(0)));
+        assertEquals(
+                "dpg-example-a.frankfurt-postgres.render.com:5432",
+                ProdDatasourceUrl.hostForLog(urls.get(urls.size() - 1)));
+    }
 }
