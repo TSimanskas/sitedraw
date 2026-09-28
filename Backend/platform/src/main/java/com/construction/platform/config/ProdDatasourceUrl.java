@@ -46,6 +46,9 @@ final class ProdDatasourceUrl {
         }
         String internal = toInternalJdbcUrl(normalized);
         if (internal != null) {
+            String named = replaceHost(internal, "sitedraw-db");
+            urls.add(withQuery(named, SSL_OFF));
+            urls.add(withQuery(named, SSL_PREFER));
             urls.add(withQuery(internal, SSL_OFF));
             urls.add(withQuery(internal, SSL_PREFER));
             urls.add(internal);
@@ -62,6 +65,10 @@ final class ProdDatasourceUrl {
             return null;
         }
         return jdbcUrl.replace(host, matcher.group(1));
+    }
+
+    static String replaceHost(String jdbcUrl, String newHost) {
+        return jdbcUrl.replace(hostName(jdbcUrl), newHost);
     }
 
     static String hostForLog(String jdbcUrl) {

@@ -12,7 +12,7 @@ FROM maven:3.9.9-eclipse-temurin-17 AS build
 WORKDIR /app
 COPY pom.xml ./
 RUN mvn -B -q dependency:go-offline || true
-ARG BUILD_ID=20260928-private-plain
+ARG BUILD_ID=20260928-ipv6-svcname
 COPY src src
 COPY --from=ui /ui/dist src/main/resources/static
 RUN mvn -B package -DskipTests -q
@@ -22,4 +22,4 @@ WORKDIR /app
 RUN mkdir -p /data/storage
 COPY --from=build /app/target/platform-0.0.1-SNAPSHOT.jar app.jar
 EXPOSE 8080
-ENTRYPOINT ["java", "-Xmx384m", "-Djava.net.preferIPv4Stack=true", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Xmx384m", "-jar", "app.jar"]

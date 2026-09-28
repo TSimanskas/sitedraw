@@ -55,10 +55,10 @@ class ProdDatasourceUrlTest {
     }
 
     @Test
-    void candidatesTryPrivateHostWithoutSslFirst() {
+    void candidatesTryServiceNameBeforeDpgHost() {
         var urls = ProdDatasourceUrl.candidates(
                 "jdbc:postgresql://dpg-example-a.frankfurt-postgres.render.com:5432/sitedraw_db");
-        assertEquals("dpg-example-a:5432", ProdDatasourceUrl.hostForLog(urls.get(0)));
+        assertEquals("sitedraw-db:5432", ProdDatasourceUrl.hostForLog(urls.get(0)));
         assertTrue(urls.get(0).contains("sslmode=disable"));
         assertEquals(
                 "dpg-example-a.frankfurt-postgres.render.com:5432",
