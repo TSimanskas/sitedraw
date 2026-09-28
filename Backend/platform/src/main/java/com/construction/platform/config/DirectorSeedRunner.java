@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
-@Profile({"dev", "docker"})
+@Profile({"dev", "docker", "prod"})
 public class DirectorSeedRunner implements ApplicationRunner {
 
     private static final String DIRECTOR_EMAIL = "director@construction.local";

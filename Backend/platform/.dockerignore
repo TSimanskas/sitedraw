@@ -1,0 +1,8 @@
+target
+data
+storage
+frontend/node_modules
+frontend/dist
+.git
+.idea
+*.iml
