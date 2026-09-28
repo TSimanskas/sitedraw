@@ -35,7 +35,6 @@ export const en = {
   'login.submit': 'Sign in',
   'login.submitting': 'Signing in…',
   'login.failed': 'Login failed',
-  'login.demo': 'Demo account:',
 
   'role.director': 'Director',
   'role.projectManager': 'Project Manager',
@@ -312,7 +311,6 @@ export const lt: Record<MessageKey, string> = {
   'login.submit': 'Prisijungti',
   'login.submitting': 'Jungiamasi…',
   'login.failed': 'Nepavyko prisijungti',
-  'login.demo': 'Demo paskyra:',
 
   'role.director': 'Direktorius',
   'role.projectManager': 'Projekto vadovas',

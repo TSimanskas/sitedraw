@@ -1,5 +1,7 @@
 # SiteDraw
 
+The application lives in this folder. The [repository README](../../README.md) is the starting point for GitHub.
+
 Construction document platform for project teams. Directors, project managers, and site workers can manage sites, upload PDF drawings, mark them up, and keep an audit trail.
 
 ## Stack
@@ -16,8 +18,7 @@ From `Backend/platform`, starting the API also starts the Vite frontend in `dev`
 ### IntelliJ
 
 1. Open `Backend/platform` as the project.
-2. Select the **arvydas** run configuration.
-3. Press Run.
+2. Run `PlatformApplication`.
 
 Backend: http://localhost:8080  
 Frontend: http://localhost:5173

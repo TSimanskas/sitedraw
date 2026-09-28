@@ -1134,13 +1134,6 @@ input::placeholder {
   margin-bottom: 0.35rem;
 }
 
-.auth-footnote {
-  margin-top: 1rem;
-  font-size: 0.825rem;
-  color: var(--text-secondary);
-  text-align: center;
-}
-
 /* PDF viewer */
 
 .viewer-layout {

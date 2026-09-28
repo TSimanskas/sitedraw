@@ -96,10 +96,6 @@ export function LoginPage() {
           <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
             {loading ? t('login.submitting') : t('login.submit')}
           </button>
-
-          <p className="auth-footnote">
-            {t('login.demo')} <code>director@construction.local</code> / <code>Director123!</code>
-          </p>
         </form>
       </main>
     </div>
