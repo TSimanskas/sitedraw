@@ -1,0 +1,37 @@
+# Dependencies and builds
+node_modules/
+target/
+dist/
+dist-ssr/
+.mvn/wrapper/maven-wrapper.jar
+
+# Secrets and local env
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings
+.apt_generated
+.factorypath
+.springBeans
+.sts4-cache
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Runtime data
+**/storage/
+**/data/
+
+# Logs and archives
+*.log
+*.zip
