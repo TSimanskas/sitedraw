@@ -88,15 +88,17 @@ export function LoginPage() {
             />
           </label>
 
-          {errorKey && (
-            <div className="alert alert-error" role="alert">
-              {t(errorKey)}
-            </div>
-          )}
+          <div className="auth-card-actions">
+            {errorKey && (
+              <div className="alert alert-error" role="alert">
+                {t(errorKey)}
+              </div>
+            )}
 
-          <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
-            {loading ? t('login.submitting') : t('login.submit')}
-          </button>
+            <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
+              {loading ? t('login.submitting') : t('login.submit')}
+            </button>
+          </div>
         </form>
       </main>
     </div>

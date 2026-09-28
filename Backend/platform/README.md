@@ -18,7 +18,9 @@ From `Backend/platform`, starting the API also starts the Vite frontend in `dev`
 ### IntelliJ
 
 1. Open `Backend/platform` as the project.
-2. Run `PlatformApplication`.
+2. Run `PlatformApplication` (default profile `dev` = local H2; do not set `prod` here).
+
+Render deploys from GitHub with `SPRING_PROFILES_ACTIVE=prod`. If Flyway checksum mismatch appears only in IntelliJ, delete `data/platform-db*.db` and run again.
 
 Backend: http://localhost:8080  
 Frontend: http://localhost:5173

@@ -43,7 +43,9 @@ From `Backend/platform`:
 - API: http://localhost:8080
 - UI: http://localhost:5173
 
-The `dev` profile starts the Vite frontend next to the API. Node.js must be on your PATH.
+The `dev` profile starts the Vite frontend next to the API and uses a local H2 file in `Backend/platform/data/`. Render uses `prod` (Neon Postgres from env vars). Tests use a separate in-memory H2, so `./mvnw test` does not touch your IntelliJ database. Node.js must be on your PATH.
+
+If Flyway reports a checksum mismatch locally, stop the app and delete `Backend/platform/data/platform-db*.db` — that only resets local data. Do not edit V1–V5 after they have been applied on Render; add a new `V6__…sql` instead.
 
 ### One JAR (UI inside the API)
 

@@ -35,3 +35,4 @@ Backend/platform/data/
 # Logs and archives
 *.log
 *.zip
+.neon
