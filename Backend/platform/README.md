@@ -44,6 +44,15 @@ Demo login (local `dev` profile only): `director@construction.local` / `Director
 
 Set `APP_JWT_SECRET` to a long random value before deploying. The H2 console is only open on the `dev` profile.
 
+### One JAR (UI inside the API)
+
+```bash
+./mvnw -Pfrontend package -DskipTests
+java -jar target/platform-0.0.1-SNAPSHOT.jar
+```
+
+Open http://localhost:8080. The React build is copied into `classpath:/static`; `/api` is unchanged. Local `dev` + Vite on 5173 still works without this profile.
+
 ## Docker infrastructure
 
 ```bash

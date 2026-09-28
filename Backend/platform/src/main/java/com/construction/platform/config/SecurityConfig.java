@@ -6,6 +6,7 @@ import com.construction.platform.security.RestAuthenticationEntryPoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -44,9 +45,11 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers("/api/auth/login").permitAll();
+                    auth.requestMatchers("/api/**").authenticated();
                     if (environment.matchesProfiles("dev")) {
                         auth.requestMatchers("/h2-console/**").permitAll();
                     }
+                    auth.requestMatchers(HttpMethod.GET, "/**").permitAll();
                     auth.anyRequest().authenticated();
                 })
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))

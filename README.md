@@ -45,6 +45,18 @@ From `Backend/platform`:
 
 The `dev` profile starts the Vite frontend next to the API. Node.js must be on your PATH.
 
+### One JAR (UI inside the API)
+
+Local `dev` still uses Vite on port 5173. For a single process (and later for Railway/Render), build the React app into the Spring jar:
+
+```bash
+cd Backend/platform
+./mvnw -Pfrontend package -DskipTests
+java -jar target/platform-0.0.1-SNAPSHOT.jar
+```
+
+Then open http://localhost:8080 — the UI and `/api` come from the same origin (`VITE_API_URL` stays empty). Maven downloads Node 22 if needed. `./mvnw test` does not bundle the UI, so CI stays fast.
+
 ### Docker infrastructure
 
 ```bash

@@ -128,4 +128,16 @@ class AuthControllerTest {
                                 """.formatted(email)))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    void apiRoutesStillRequireAToken() throws Exception {
+        mockMvc.perform(get("/api/projects"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void browserRoutesDoNotRequireAJwt() throws Exception {
+        mockMvc.perform(get("/login"))
+                .andExpect(status().isNotFound());
+    }
 }
