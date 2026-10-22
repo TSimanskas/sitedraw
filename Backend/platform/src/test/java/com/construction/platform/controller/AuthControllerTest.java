@@ -9,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -189,6 +190,40 @@ class AuthControllerTest {
                                 """.formatted(email)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.user.email").value(email));
+    }
+
+    @Test
+    void passwordChangesRejectWeakPasswords() throws Exception {
+        MvcResult login = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(LOGIN_BODY))
+                .andExpect(status().isOk())
+                .andReturn();
+        String token = JsonPath.read(login.getResponse().getContentAsString(), "$.token");
+
+        for (String weakPassword : new String[] {"short1!", "lowercase123!", "NoNumber!!", "NoSymbol123"}) {
+            mockMvc.perform(put("/api/auth/password")
+                            .header("Authorization", "Bearer " + token)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""
+                                    {"currentPassword":"Director123!","newPassword":"%s"}
+                                    """.formatted(weakPassword)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.detail", containsString("uppercase")));
+
+            mockMvc.perform(post("/api/auth/forgot-password")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""
+                                    {"email":"director@construction.local","newPassword":"%s"}
+                                    """.formatted(weakPassword)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.detail", containsString("uppercase")));
+        }
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(LOGIN_BODY))
+                .andExpect(status().isOk());
     }
 
     @Test

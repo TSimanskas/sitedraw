@@ -124,20 +124,45 @@ code {
 }
 
 .header-inner {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0.85rem 1.5rem;
-  display: flex;
+  width: 100%;
+  margin: 0;
+  padding: 0.7rem 1rem;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: 'brand tools account';
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+  gap: 0.55rem 0.85rem;
 }
 
-.header-left,
-.header-right {
+.header-tools {
+  grid-area: tools;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.65rem;
+  min-width: 0;
+}
+
+.header-account {
+  grid-area: account;
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+  gap: 0.4rem;
+  justify-self: end;
+}
+
+.header-action {
+  box-sizing: border-box;
+  width: clamp(6.8rem, 14vw, 11rem);
+  height: clamp(2.45rem, 5vw, 2.65rem);
+  padding: 0.3rem 0.5rem;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.15;
+  font-size: clamp(0.72rem, 1.15vw, 0.925rem);
+  flex: 0 0 auto;
 }
 
 .language-switcher {
@@ -169,6 +194,7 @@ code {
 }
 
 .language-switcher-header {
+  flex: 0 0 auto;
   background: rgba(255, 255, 255, 0.12);
   border-color: rgba(255, 255, 255, 0.18);
 }
@@ -197,11 +223,13 @@ code {
 }
 
 .brand {
+  grid-area: brand;
   display: flex;
   align-items: center;
   gap: 0.75rem;
   color: var(--header-text);
   text-decoration: none;
+  justify-self: start;
 }
 
 .brand:hover {
@@ -253,6 +281,8 @@ code {
 
 .nav-links {
   display: flex;
+  flex-wrap: nowrap;
+  flex: 0 0 auto;
   gap: 0.35rem;
 }
 
@@ -275,6 +305,7 @@ code {
 .user-chip {
   display: flex;
   align-items: center;
+  flex: 0 0 auto;
   gap: 0.65rem;
 }
 
@@ -399,21 +430,148 @@ code {
   min-width: 180px;
 }
 
+.password-rules {
+  list-style: none;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.15rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.password-rules li {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.password-rules li::before {
+  content: '';
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  border: 1.5px solid currentColor;
+  flex: none;
+}
+
+.password-rules li.met {
+  color: var(--success);
+}
+
+.password-rules li.met::before {
+  background: currentColor;
+  box-shadow: inset 0 0 0 2px var(--surface);
+}
+
+.password-banner .password-rules {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0.7rem auto 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.1rem;
+  color: #94a3b8;
+}
+
+.password-banner .password-rules li.met {
+  color: #86efac;
+}
+
+.password-banner .password-rules li.met::before {
+  box-shadow: inset 0 0 0 2px #111827;
+}
+
 .password-banner .alert {
   max-width: 1200px;
   margin: 0.75rem auto 0;
 }
 
 .user-row-manage {
-  grid-template-columns: auto 1fr auto auto;
-  align-items: start;
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: nowrap;
+  gap: 0.75rem;
+  min-width: max-content;
+}
+
+.user-main {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: 0;
+  flex: 0 1 auto;
+}
+
+.user-row.user-row-manage > .avatar,
+.user-row.user-row-manage > .user-main,
+.user-row.user-row-manage > .role-pill {
+  height: 2.25rem;
+  align-self: flex-start;
+}
+
+.user-row.user-row-manage > .user-main,
+.user-row.user-row-manage > .role-pill {
+  display: flex;
+  align-items: center;
+}
+
+.user-row.user-row-manage strong,
+.user-row.user-row-manage .user-email {
+  display: inline;
+  white-space: nowrap;
+}
+
+.user-row.user-row-manage .user-email {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 8rem;
+}
+
+.user-actions {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.55rem;
+  flex: 0 0 auto;
 }
 
 .user-row-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.4rem;
   justify-content: flex-end;
+  flex: 0 0 auto;
+}
+
+.user-action-panel {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+}
+
+.user-actions .user-edit-form {
+  margin-top: 0;
+}
+
+.user-password-panel {
+  width: max-content;
+  max-width: 100%;
+  align-self: flex-start;
+  padding: 0.55rem 0.75rem;
+}
+
+.user-password-reveal {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 650;
+  line-height: 1.4;
+  white-space: nowrap;
 }
 
 .user-edit-form {
@@ -929,7 +1087,7 @@ input::placeholder {
 }
 
 .user-list {
-  overflow: hidden;
+  overflow-x: auto;
 }
 
 .user-row {
@@ -972,6 +1130,16 @@ input::placeholder {
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--text-secondary);
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.user-row.user-row-manage {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: nowrap;
+  gap: 0.75rem;
+  min-width: max-content;
 }
 
 /* Empty & loading states */
@@ -1471,15 +1639,29 @@ input::placeholder {
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 960px) {
   .header-inner {
-    flex-direction: column;
-    align-items: stretch;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    column-gap: 0.65rem;
+    row-gap: 0.45rem;
   }
 
-  .header-left,
-  .header-right {
-    justify-content: space-between;
+  .brand {
+    order: 1;
+    margin-right: auto;
+  }
+
+  .header-account {
+    order: 2;
+    margin-left: auto;
+  }
+
+  .header-tools {
+    order: 3;
+    flex: 1 0 100%;
   }
 
   .user-meta {
@@ -1544,12 +1726,36 @@ input::placeholder {
   color: #e2e8f0;
 }
 
+.password-changed-dialog {
+  width: min(24rem, 100%);
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 2px);
+  box-shadow: var(--shadow-md);
+  padding: 1.5rem;
+}
+
+.password-changed-dialog h2 {
+  margin: 0 0 0.45rem;
+  font-size: 1.25rem;
+}
+
+.password-changed-dialog p {
+  margin: 0 0 1.15rem;
+  line-height: 1.45;
+}
+
 @media (max-width: 640px) {
   .app-main {
     padding: 1.25rem 1rem 2rem;
   }
 
   .nav-links {
+    display: flex;
+  }
+
+  .brand-text span {
     display: none;
   }
 

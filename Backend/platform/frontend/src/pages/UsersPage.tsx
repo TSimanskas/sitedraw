@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { PageHeader } from '../components/PageHeader'
+import { PasswordRequirements } from '../components/PasswordRequirements'
 import { api } from '../lib/api'
+import { isStrongPassword } from '../lib/passwordPolicy'
 import { formatRole, getInitials } from '../lib/format'
 import { getUser } from '../lib/auth'
 import { useI18n } from '../lib/LanguageContext'
@@ -17,6 +19,8 @@ export function UsersPage() {
   const [editRole, setEditRole] = useState<UserRole>('SITE_WORKER')
   const [resetUserId, setResetUserId] = useState<string | null>(null)
   const [resetPassword, setResetPassword] = useState('')
+  const [resetError, setResetError] = useState<string | null>(null)
+  const [revealedUserId, setRevealedUserId] = useState<string | null>(null)
 
   const usersQuery = useQuery({
     queryKey: ['users'],
@@ -53,11 +57,32 @@ export function UsersPage() {
     },
   })
 
+  function togglePassword(userId: string) {
+    setRevealedUserId((current) => (current === userId ? null : userId))
+    setResetUserId(null)
+    setResetPassword('')
+    setResetError(null)
+    setEditingUserId(null)
+    setSuccessMessage(null)
+  }
+
   function startEdit(user: User) {
     setEditingUserId(user.id)
     setEditFullName(user.fullName)
     setEditRole(user.role)
     setResetUserId(null)
+    setResetPassword('')
+    setResetError(null)
+    setRevealedUserId(null)
+    setSuccessMessage(null)
+  }
+
+  function startReset(userId: string) {
+    setResetUserId(userId)
+    setResetPassword('')
+    setResetError(null)
+    setEditingUserId(null)
+    setRevealedUserId(null)
     setSuccessMessage(null)
   }
 
@@ -99,14 +124,79 @@ export function UsersPage() {
               const isSelf = user.id === currentUser?.id
               const isEditing = editingUserId === user.id
               const isResetting = resetUserId === user.id
+              const isRevealed = revealedUserId === user.id
+              const canRevealPassword = !isDirector && Boolean(user.knownPassword || user.email.endsWith('@construction.local'))
 
               return (
                 <div key={user.id} className="user-row user-row-manage">
                   <span className="avatar">{getInitials(user.fullName)}</span>
-                  <div>
-                    {isEditing ? (
+                  <div className="user-main">
+                    <strong>
+                      {user.fullName}
+                      {user.active === false ? ` ${t('users.inactive')}` : ''}
+                    </strong>
+                    <span className="user-email">{user.email}</span>
+                  </div>
+                  <span className="role-pill">{formatRole(user.role, locale)}</span>
+                  <div className="user-actions">
+                    <div className="user-row-actions">
+                      {canRevealPassword && (
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          aria-expanded={isRevealed}
+                          onClick={() => togglePassword(user.id)}
+                        >
+                          {isRevealed ? t('users.hidePassword') : t('users.showPassword')}
+                        </button>
+                      )}
+                      {!isDirector && (
+                        <button type="button" className="btn btn-secondary btn-sm" onClick={() => startEdit(user)}>
+                          {t('common.edit')}
+                        </button>
+                      )}
+                      <button type="button" className="btn btn-secondary btn-sm" onClick={() => startReset(user.id)}>
+                        {t('users.resetPassword')}
+                      </button>
+                      {!isDirector && !isSelf && (
+                        <button
+                          type="button"
+                          className="btn btn-danger btn-sm"
+                          disabled={updateMutation.isPending}
+                          onClick={() => {
+                            const nextActive = user.active === false
+                            if (
+                              !nextActive &&
+                              !window.confirm(t('users.deactivateConfirm', { name: user.fullName }))
+                            ) {
+                              return
+                            }
+                            updateMutation.mutate({
+                              userId: user.id,
+                              fullName: user.fullName,
+                              role: user.role,
+                              active: nextActive,
+                            })
+                          }}
+                        >
+                          {user.active === false ? t('users.reactivate') : t('users.deactivate')}
+                        </button>
+                      )}
+                    </div>
+
+                    {isRevealed && (
+                      <div className="user-action-panel user-password-panel">
+                        <p className="user-password-reveal">
+                          {user.knownPassword
+                            ? t('users.knownPassword', { password: user.knownPassword })
+                            : t('users.passwordChanged')}
+                        </p>
+                      </div>
+                    )}
+
+                    {isEditing && (
                       <form
-                        className="user-edit-form"
+                        className="user-edit-form user-action-panel"
                         onSubmit={(event) => {
                           event.preventDefault()
                           updateMutation.mutate({
@@ -144,32 +234,33 @@ export function UsersPage() {
                           </button>
                         </div>
                       </form>
-                    ) : (
-                      <>
-                        <strong>
-                          {user.fullName}
-                          {user.active === false ? ` ${t('users.inactive')}` : ''}
-                        </strong>
-                        <span>{user.email}</span>
-                      </>
                     )}
 
                     {isResetting && (
                       <form
-                        className="user-edit-form"
+                        className="user-edit-form user-action-panel"
                         onSubmit={(event) => {
                           event.preventDefault()
+                          if (!isStrongPassword(resetPassword)) {
+                            setResetError(t('password.requirementsFailed'))
+                            return
+                          }
+                          setResetError(null)
                           resetMutation.mutate({ userId: user.id, password: resetPassword })
                         }}
                       >
                         <input
                           type="password"
                           value={resetPassword}
-                          onChange={(event) => setResetPassword(event.target.value)}
-                          minLength={8}
+                          onChange={(event) => {
+                            setResetPassword(event.target.value)
+                            setResetError(null)
+                          }}
                           placeholder={t('users.newPassword')}
                           required
                         />
+                        <PasswordRequirements password={resetPassword} />
+                        {resetError && <div className="alert alert-error">{resetError}</div>}
                         <div className="user-row-actions">
                           <button type="submit" className="btn btn-primary btn-sm" disabled={resetMutation.isPending}>
                             {t('users.setPassword')}
@@ -180,6 +271,7 @@ export function UsersPage() {
                             onClick={() => {
                               setResetUserId(null)
                               setResetPassword('')
+                              setResetError(null)
                             }}
                           >
                             {t('common.cancel')}
@@ -188,52 +280,6 @@ export function UsersPage() {
                       </form>
                     )}
                   </div>
-                  <span className="role-pill">{formatRole(user.role, locale)}</span>
-                  {!isEditing && (
-                    <div className="user-row-actions">
-                      {!isDirector && (
-                        <button type="button" className="btn btn-secondary btn-sm" onClick={() => startEdit(user)}>
-                          {t('common.edit')}
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        className="btn btn-secondary btn-sm"
-                        onClick={() => {
-                          setResetUserId(user.id)
-                          setResetPassword('')
-                          setEditingUserId(null)
-                          setSuccessMessage(null)
-                        }}
-                      >
-                        {t('users.resetPassword')}
-                      </button>
-                      {!isDirector && !isSelf && (
-                        <button
-                          type="button"
-                          className="btn btn-danger btn-sm"
-                          disabled={updateMutation.isPending}
-                          onClick={() => {
-                            const nextActive = user.active === false
-                            if (
-                              !nextActive &&
-                              !window.confirm(t('users.deactivateConfirm', { name: user.fullName }))
-                            ) {
-                              return
-                            }
-                            updateMutation.mutate({
-                              userId: user.id,
-                              fullName: user.fullName,
-                              role: user.role,
-                              active: nextActive,
-                            })
-                          }}
-                        >
-                          {user.active === false ? t('users.reactivate') : t('users.deactivate')}
-                        </button>
-                      )}
-                    </div>
-                  )}
                 </div>
               )
             })}

@@ -33,6 +33,8 @@ import java.io.InputStream;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 @Component
 @Order(20)
@@ -41,7 +43,32 @@ public class DemoDataSeedRunner implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DemoDataSeedRunner.class);
 
-    static final String DEMO_PASSWORD = "Demo123!";
+    public static final String DEMO_PASSWORD = "Demo123!";
+    public static final Map<String, String> PLACEHOLDER_PASSWORDS = Map.ofEntries(
+            Map.entry("lukas.jonaitis@construction.local", "%vU4F!i!fx9h"),
+            Map.entry("andrius.kazlauskas@construction.local", "RAw$WZ5CuRLK"),
+            Map.entry("monika.petraityte@construction.local", "?GK!edvhD&86"),
+            Map.entry("dovydas.jankauskas@construction.local", "f4tm#p#E7LWT"),
+            Map.entry("greta.simkute@construction.local", "FY%7Sg4UeHRs"),
+            Map.entry("ieva.paulauskiene@construction.local", "Dx#WuPFvZvK4"),
+            Map.entry("martynas.vaitkus@construction.local", "7c%rGMV7Wd!Y"),
+            Map.entry("ruta.navickaite@construction.local", "R7!Pu$ddHV?e"),
+            Map.entry("jonas.baranauskas@construction.local", "q78j!YP#Q%6F"),
+            Map.entry("egle.stankeviciute@construction.local", "k%7Z8Mnjcmz%")
+    );
+    private static final List<String> RETIRED_PLACEHOLDER_PASSWORDS = List.of(
+            DEMO_PASSWORD,
+            "Lukas123!",
+            "Andrius123!",
+            "Monika123!",
+            "Dovydas123!",
+            "Greta123!",
+            "Ieva123!",
+            "Martynas123!",
+            "Ruta123!",
+            "Jonas123!",
+            "Egle123!"
+    );
     static final String DEMO_PLAN_TITLE = "Demo planas";
     private static final String DEMO_PLAN_RESOURCE = "demo/demo-plan.pdf";
     private static final String PDF_CONTENT_TYPE = "application/pdf";
@@ -94,26 +121,49 @@ public class DemoDataSeedRunner implements ApplicationRunner {
             seedTeamsAndProjects(director);
         }
 
+        assignDistinctPlaceholderPasswords();
         seedDemoPlan(director);
     }
 
-    private void seedTeamsAndProjects(User director) {
-        String passwordHash = passwordEncoder.encode(DEMO_PASSWORD);
+    public static String placeholderPassword(String email) {
+        if (email == null) {
+            return null;
+        }
+        return PLACEHOLDER_PASSWORDS.get(email.toLowerCase(Locale.ROOT));
+    }
 
+    private void assignDistinctPlaceholderPasswords() {
+        for (Map.Entry<String, String> entry : PLACEHOLDER_PASSWORDS.entrySet()) {
+            User user = userRepository.findByEmailIgnoreCase(entry.getKey()).orElse(null);
+            if (user == null || passwordEncoder.matches(entry.getValue(), user.getPasswordHash())) {
+                continue;
+            }
+            boolean retired = RETIRED_PLACEHOLDER_PASSWORDS.stream()
+                    .anyMatch(oldPassword -> passwordEncoder.matches(oldPassword, user.getPasswordHash()));
+            if (!retired) {
+                continue;
+            }
+            user.setPasswordHash(passwordEncoder.encode(entry.getValue()));
+            userRepository.save(user);
+            log.info("Assigned a new placeholder password for {}", user.getEmail());
+        }
+    }
+
+    private void seedTeamsAndProjects(User director) {
         List<User> riversideTeam = userRepository.saveAll(List.of(
-                person("lukas.jonaitis@construction.local", "Lukas Jonaitis", UserRole.PROJECT_MANAGER, passwordHash),
-                person("andrius.kazlauskas@construction.local", "Andrius Kazlauskas", UserRole.SITE_WORKER, passwordHash),
-                person("monika.petraityte@construction.local", "Monika Petraitytė", UserRole.SITE_WORKER, passwordHash),
-                person("dovydas.jankauskas@construction.local", "Dovydas Jankauskas", UserRole.SITE_WORKER, passwordHash),
-                person("greta.simkute@construction.local", "Greta Šimkutė", UserRole.SITE_WORKER, passwordHash)
+                placeholder("lukas.jonaitis@construction.local", "Lukas Jonaitis", UserRole.PROJECT_MANAGER),
+                placeholder("andrius.kazlauskas@construction.local", "Andrius Kazlauskas", UserRole.SITE_WORKER),
+                placeholder("monika.petraityte@construction.local", "Monika Petraitytė", UserRole.SITE_WORKER),
+                placeholder("dovydas.jankauskas@construction.local", "Dovydas Jankauskas", UserRole.SITE_WORKER),
+                placeholder("greta.simkute@construction.local", "Greta Šimkutė", UserRole.SITE_WORKER)
         ));
 
         List<User> logisticsTeam = userRepository.saveAll(List.of(
-                person("ieva.paulauskiene@construction.local", "Ieva Paulauskienė", UserRole.PROJECT_MANAGER, passwordHash),
-                person("martynas.vaitkus@construction.local", "Martynas Vaitkus", UserRole.SITE_WORKER, passwordHash),
-                person("ruta.navickaite@construction.local", "Rūta Navickaitė", UserRole.SITE_WORKER, passwordHash),
-                person("jonas.baranauskas@construction.local", "Jonas Baranauskas", UserRole.SITE_WORKER, passwordHash),
-                person("egle.stankeviciute@construction.local", "Eglė Stankevičiūtė", UserRole.SITE_WORKER, passwordHash)
+                placeholder("ieva.paulauskiene@construction.local", "Ieva Paulauskienė", UserRole.PROJECT_MANAGER),
+                placeholder("martynas.vaitkus@construction.local", "Martynas Vaitkus", UserRole.SITE_WORKER),
+                placeholder("ruta.navickaite@construction.local", "Rūta Navickaitė", UserRole.SITE_WORKER),
+                placeholder("jonas.baranauskas@construction.local", "Jonas Baranauskas", UserRole.SITE_WORKER),
+                placeholder("egle.stankeviciute@construction.local", "Eglė Stankevičiūtė", UserRole.SITE_WORKER)
         ));
 
         Project riverside = projectRepository.save(project(
@@ -219,6 +269,10 @@ public class DemoDataSeedRunner implements ApplicationRunner {
         try (PDDocument document = Loader.loadPDF(pdf)) {
             return document.getNumberOfPages();
         }
+    }
+
+    private User placeholder(String email, String fullName, UserRole role) {
+        return person(email, fullName, role, passwordEncoder.encode(placeholderPassword(email)));
     }
 
     private static User person(String email, String fullName, UserRole role, String passwordHash) {

@@ -1,5 +1,8 @@
 import { useState, type FormEvent } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { PasswordChangedDialog } from '../components/PasswordChangedDialog'
+import { PasswordRequirements } from '../components/PasswordRequirements'
+import { isStrongPassword } from '../lib/passwordPolicy'
 import { LanguageSwitcher } from '../components/LanguageSwitcher'
 import { api, ApiError } from '../lib/api'
 import { isAuthenticated } from '../lib/auth'
@@ -8,6 +11,7 @@ import type { MessageKey } from '../lib/i18n'
 
 export function ForgotPasswordPage() {
   const { t } = useI18n()
+  const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -26,6 +30,10 @@ export function ForgotPasswordPage() {
 
     if (newPassword !== confirmPassword) {
       setErrorKey('forgot.mismatch')
+      return
+    }
+    if (!isStrongPassword(newPassword)) {
+      setErrorKey('password.requirementsFailed')
       return
     }
 
@@ -85,12 +93,11 @@ export function ForgotPasswordPage() {
               type="password"
               value={newPassword}
               onChange={(event) => setNewPassword(event.target.value)}
-              placeholder={t('users.passwordHint')}
-              minLength={8}
               required
               autoComplete="new-password"
             />
           </label>
+          <PasswordRequirements password={newPassword} />
 
           <label className="field">
             <span>{t('forgot.confirmPassword')}</span>
@@ -98,7 +105,6 @@ export function ForgotPasswordPage() {
               type="password"
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
-              minLength={8}
               required
               autoComplete="new-password"
             />
@@ -110,11 +116,6 @@ export function ForgotPasswordPage() {
                 {t(errorKey)}
               </div>
             )}
-            {success && (
-              <div className="alert alert-success" role="status">
-                {t('forgot.success')}
-              </div>
-            )}
 
             <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
               {loading ? t('forgot.submitting') : t('forgot.submit')}
@@ -124,6 +125,13 @@ export function ForgotPasswordPage() {
             </Link>
           </div>
         </form>
+        <PasswordChangedDialog
+          open={success}
+          title={t('password.changedTitle')}
+          body={t('password.changedBody')}
+          actionLabel={t('password.goToLogin')}
+          onGoToLogin={() => navigate('/login')}
+        />
       </main>
     </div>
   )

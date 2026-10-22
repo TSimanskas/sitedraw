@@ -8,6 +8,7 @@ export interface User {
   fullName: string
   role: UserRole
   active?: boolean
+  knownPassword?: string | null
 }
 
 export interface AuthResponse {

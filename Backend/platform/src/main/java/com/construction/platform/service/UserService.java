@@ -1,5 +1,6 @@
 package com.construction.platform.service;
 
+import com.construction.platform.config.DemoDataSeedRunner;
 import com.construction.platform.domain.User;
 import com.construction.platform.domain.UserRole;
 import com.construction.platform.dto.CreateUserRequest;
@@ -53,8 +54,16 @@ public class UserService {
     public List<UserResponse> listUsers() {
         return userRepository.findAll().stream()
                 .sorted(Comparator.comparing(User::getFullName, String.CASE_INSENSITIVE_ORDER))
-                .map(UserResponse::from)
+                .map(user -> UserResponse.from(user, knownPlaceholderPassword(user)))
                 .toList();
+    }
+
+    private String knownPlaceholderPassword(User user) {
+        String password = DemoDataSeedRunner.placeholderPassword(user.getEmail());
+        if (password == null || !passwordEncoder.matches(password, user.getPasswordHash())) {
+            return null;
+        }
+        return password;
     }
 
     @Transactional
