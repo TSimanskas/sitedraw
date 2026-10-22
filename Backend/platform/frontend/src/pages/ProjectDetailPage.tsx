@@ -26,7 +26,6 @@ export function ProjectDetailPage() {
   const canUpload = user?.role !== 'SITE_WORKER'
 
   const [title, setTitle] = useState('')
-  const [category, setCategory] = useState('Plans')
   const [selectedFileName, setSelectedFileName] = useState<string | null>(null)
   const [selectedUserId, setSelectedUserId] = useState('')
   const [documentQuery, setDocumentQuery] = useState('')
@@ -89,7 +88,7 @@ export function ProjectDetailPage() {
   })
 
   const uploadMutation = useMutation({
-    mutationFn: (file: File) => api.uploadDocument(projectId, file, title || undefined, category || undefined),
+    mutationFn: (file: File) => api.uploadDocument(projectId, file, title || undefined),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents', projectId] })
       setTitle('')
@@ -339,7 +338,7 @@ export function ProjectDetailPage() {
           <section className="panel section-block">
             <div className="section-heading">
               <h2>{t('team.title')}</h2>
-              <p>{t('team.count', { count: members.length })}</p>
+              <p>{members.length === 1 ? t('team.countOne') : t('team.count', { count: members.length })}</p>
             </div>
 
             {canManageTeam && (
@@ -481,26 +480,14 @@ export function ProjectDetailPage() {
               </div>
 
               <form className="stack-form" onSubmit={handleUpload}>
-                <div className="form-row">
-                  <label className="field">
-                    <span>{t('upload.drawingTitle')}</span>
-                    <input
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      placeholder={t('upload.titlePlaceholder')}
-                    />
-                  </label>
-                  <label className="field">
-                    <span>{t('upload.category')}</span>
-                    <select value={category} onChange={(e) => setCategory(e.target.value)}>
-                      <option value="Plans">{t('category.Plans')}</option>
-                      <option value="Sections">{t('category.Sections')}</option>
-                      <option value="Elevations">{t('category.Elevations')}</option>
-                      <option value="Details">{t('category.Details')}</option>
-                      <option value="Other">{t('category.Other')}</option>
-                    </select>
-                  </label>
-                </div>
+                <label className="field">
+                  <span>{t('upload.drawingTitle')}</span>
+                  <input
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder={t('upload.titlePlaceholder')}
+                  />
+                </label>
 
                 <label className="file-drop">
                   <input

@@ -4,6 +4,12 @@ Construction document platform for project teams. Directors, project managers, a
 
 [![CI](https://github.com/TSimanskas/sitedraw/actions/workflows/ci.yml/badge.svg)](https://github.com/TSimanskas/sitedraw/actions/workflows/ci.yml)
 
+**Live demo:** [sitedraw.onrender.com](https://sitedraw.onrender.com)
+
+Sign in with `director@construction.local` / `Director123!`.
+
+The free Render plan sleeps when nobody is using the site. The first open can take about a minute.
+
 ![Sign-in screen](docs/screenshots/login.png)
 
 ## What it does
@@ -71,9 +77,7 @@ PostgreSQL is on 5432, MinIO on 9000 (console 9001).
 
 ### Local demo user
 
-The `dev` profile seeds one director account so you can sign in without creating a user first. It is documented here only, not on the login screen:
-
-`director@construction.local` / `Director123!`
+Local `dev` uses the same director account as the live demo: `director@construction.local` / `Director123!`. It is not shown on the login screen.
 
 Set `APP_JWT_SECRET` to a long random value before deploying. The H2 console is only open on the `dev` profile.
 

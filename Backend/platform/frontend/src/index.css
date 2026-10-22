@@ -476,12 +476,27 @@ code {
   margin-top: 1.5rem;
 }
 
+.panel.section-block {
+  padding: 1.5rem;
+}
+
 .section-heading {
-  margin-bottom: 1rem;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1.25rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
 }
 
 .section-heading h2 {
-  margin-bottom: 0.25rem;
+  margin: 0;
+}
+
+.section-heading p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
 }
 
 /* Buttons */

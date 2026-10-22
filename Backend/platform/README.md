@@ -42,7 +42,7 @@ npm install
 npm run dev
 ```
 
-Demo login (local `dev` profile only): `director@construction.local` / `Director123!`
+Demo login (local and the live site): `director@construction.local` / `Director123!`. Live demo: https://sitedraw.onrender.com — the free Render plan can take about a minute to wake up.
 
 Set `APP_JWT_SECRET` to a long random value before deploying. The H2 console is only open on the `dev` profile.
 

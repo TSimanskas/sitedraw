@@ -106,6 +106,7 @@ export const en = {
 
   'team.title': 'Team',
   'team.count': '{count} people on this job',
+  'team.countOne': '1 person on this job',
   'team.addMember': 'Add member',
   'team.selectUser': 'Select a user…',
   'team.noActiveUsers': 'No active users available',
@@ -383,6 +384,7 @@ export const lt: Record<MessageKey, string> = {
 
   'team.title': 'Komanda',
   'team.count': 'Šiame objekte: {count}',
+  'team.countOne': 'Šiame objekte: 1',
   'team.addMember': 'Pridėti narį',
   'team.selectUser': 'Pasirinkite naudotoją…',
   'team.noActiveUsers': 'Nėra aktyvių naudotojų',
