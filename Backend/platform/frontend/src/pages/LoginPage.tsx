@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { LanguageSwitcher } from '../components/LanguageSwitcher'
 import { api, ApiError } from '../lib/api'
 import { isAuthenticated, saveSession } from '../lib/auth'
@@ -98,6 +98,9 @@ export function LoginPage() {
             <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
               {loading ? t('login.submitting') : t('login.submit')}
             </button>
+            <Link to="/forgot-password" className="auth-forgot">
+              {t('login.forgot')}
+            </Link>
           </div>
         </form>
       </main>

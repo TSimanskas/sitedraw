@@ -4,6 +4,7 @@ import com.construction.platform.config.AppProperties;
 import com.construction.platform.domain.User;
 import com.construction.platform.dto.AuthResponse;
 import com.construction.platform.dto.ChangePasswordRequest;
+import com.construction.platform.dto.ForgotPasswordRequest;
 import com.construction.platform.dto.LoginRequest;
 import com.construction.platform.dto.UserResponse;
 import com.construction.platform.exception.ApiException;
@@ -68,6 +69,19 @@ public class AuthService {
 
         if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Current password is incorrect");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public void forgotPassword(ForgotPasswordRequest request) {
+        User user = userRepository.findByEmailIgnoreCase(request.email())
+                .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "No account uses this email"));
+
+        if (!user.isActive()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "This account is inactive");
         }
 
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));

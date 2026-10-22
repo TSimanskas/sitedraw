@@ -130,6 +130,68 @@ class AuthControllerTest {
     }
 
     @Test
+    void forgotPasswordRequiresAnExistingAccountEmailAndThenAllowsLogin() throws Exception {
+        String suffix = java.util.UUID.randomUUID().toString().substring(0, 8);
+        String email = "forgot-" + suffix + "@construction.local";
+
+        MvcResult directorLogin = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(LOGIN_BODY))
+                .andExpect(status().isOk())
+                .andReturn();
+        String directorToken = JsonPath.read(directorLogin.getResponse().getContentAsString(), "$.token");
+
+        mockMvc.perform(post("/api/users")
+                        .header("Authorization", "Bearer " + directorToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email":"%s",
+                                  "password":"Password123!",
+                                  "fullName":"Forgot User",
+                                  "role":"SITE_WORKER"
+                                }
+                                """.formatted(email)))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/api/auth/forgot-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"missing-%s@construction.local","newPassword":"NewPass123!"}
+                                """.formatted(suffix)))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(post("/api/auth/forgot-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"%s","newPassword":"short"}
+                                """.formatted(email)))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(post("/api/auth/forgot-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"%s","newPassword":"NewPass123!"}
+                                """.formatted(email)))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"%s","password":"Password123!"}
+                                """.formatted(email)))
+                .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"%s","password":"NewPass123!"}
+                                """.formatted(email)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.user.email").value(email));
+    }
+
+    @Test
     void apiRoutesStillRequireAToken() throws Exception {
         mockMvc.perform(get("/api/projects"))
                 .andExpect(status().isUnauthorized());

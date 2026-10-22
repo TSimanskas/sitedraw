@@ -1146,6 +1146,17 @@ input::placeholder {
   margin-top: 0.35rem;
 }
 
+.auth-forgot {
+  text-align: center;
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.auth-forgot:hover {
+  color: var(--primary-hover);
+}
+
 .auth-card-header {
   display: flex;
   align-items: flex-start;

@@ -45,6 +45,7 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers("/api/auth/login").permitAll();
+                    auth.requestMatchers(HttpMethod.POST, "/api/auth/forgot-password").permitAll();
                     auth.requestMatchers("/api/**").authenticated();
                     if (environment.matchesProfiles("dev")) {
                         auth.requestMatchers("/h2-console/**").permitAll();

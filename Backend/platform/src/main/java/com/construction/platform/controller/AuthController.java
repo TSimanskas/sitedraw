@@ -2,6 +2,7 @@ package com.construction.platform.controller;
 
 import com.construction.platform.dto.AuthResponse;
 import com.construction.platform.dto.ChangePasswordRequest;
+import com.construction.platform.dto.ForgotPasswordRequest;
 import com.construction.platform.dto.LoginRequest;
 import com.construction.platform.dto.UserResponse;
 import com.construction.platform.security.UserPrincipal;
@@ -30,6 +31,12 @@ public class AuthController {
     @PostMapping("/login")
     public AuthResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
+    }
+
+    @PostMapping("/forgot-password")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.forgotPassword(request);
     }
 
     @GetMapping("/me")

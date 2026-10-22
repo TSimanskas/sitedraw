@@ -204,6 +204,13 @@ export const api = {
     })
   },
 
+  forgotPassword(email: string, newPassword: string) {
+    return request<void>('/api/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email, newPassword }),
+    })
+  },
+
   documentFileUrl(documentId: string, versionNumber: number) {
     return `${API_BASE}/api/documents/${documentId}/versions/${versionNumber}/file`
   },

@@ -32,7 +32,6 @@ export function Layout() {
       setCurrentPassword('')
       setNewPassword('')
       setPasswordMessage(t('nav.passwordUpdated'))
-      setShowPasswordForm(false)
     } catch (error) {
       setPasswordError(error instanceof Error ? error.message : t('nav.passwordFailed'))
     } finally {
