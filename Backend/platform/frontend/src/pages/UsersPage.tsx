@@ -1,20 +1,16 @@
-import { useState, type FormEvent } from 'react'
+import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { PageHeader } from '../components/PageHeader'
 import { api } from '../lib/api'
 import { formatRole, getInitials } from '../lib/format'
 import { getUser } from '../lib/auth'
 import { useI18n } from '../lib/LanguageContext'
-import type { CreateUserPayload, User, UserRole } from '../types'
+import type { User, UserRole } from '../types'
 
 export function UsersPage() {
   const queryClient = useQueryClient()
   const currentUser = getUser()
   const { t, locale } = useI18n()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [fullName, setFullName] = useState('')
-  const [role, setRole] = useState<CreateUserPayload['role']>('PROJECT_MANAGER')
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [editingUserId, setEditingUserId] = useState<string | null>(null)
   const [editFullName, setEditFullName] = useState('')
@@ -25,18 +21,6 @@ export function UsersPage() {
   const usersQuery = useQuery({
     queryKey: ['users'],
     queryFn: api.listUsers,
-  })
-
-  const createMutation = useMutation({
-    mutationFn: api.createUser,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] })
-      queryClient.invalidateQueries({ queryKey: ['assignable-users'] })
-      setEmail('')
-      setPassword('')
-      setFullName('')
-      setSuccessMessage(t('users.created'))
-    },
   })
 
   const updateMutation = useMutation({
@@ -69,12 +53,6 @@ export function UsersPage() {
     },
   })
 
-  function handleSubmit(event: FormEvent) {
-    event.preventDefault()
-    setSuccessMessage(null)
-    createMutation.mutate({ email, password, fullName, role })
-  }
-
   function startEdit(user: User) {
     setEditingUserId(user.id)
     setEditFullName(user.fullName)
@@ -84,65 +62,21 @@ export function UsersPage() {
   }
 
   const users = usersQuery.data ?? []
-  const actionError = createMutation.error ?? updateMutation.error ?? resetMutation.error
+  const actionError = updateMutation.error ?? resetMutation.error
 
   return (
     <div className="page">
       <PageHeader eyebrow={t('users.eyebrow')} title={t('users.title')} description={t('users.description')} />
 
-      <div className="two-column">
-        <section className="panel section-block">
-          <div className="section-heading">
-            <h2>{t('users.addTitle')}</h2>
-            <p>{t('users.addDescription')}</p>
-          </div>
+      {actionError && (
+        <div className="alert alert-error">
+          {actionError instanceof Error ? actionError.message : t('users.updateFailed')}
+        </div>
+      )}
 
-          <form className="stack-form" onSubmit={handleSubmit}>
-            <label className="field">
-              <span>{t('users.fullName')}</span>
-              <input value={fullName} onChange={(e) => setFullName(e.target.value)} required />
-            </label>
+      {successMessage && <div className="alert alert-success">{successMessage}</div>}
 
-            <label className="field">
-              <span>{t('users.email')}</span>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-            </label>
-
-            <label className="field">
-              <span>{t('users.password')}</span>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={8}
-                placeholder={t('users.passwordHint')}
-              />
-            </label>
-
-            <label className="field">
-              <span>{t('users.role')}</span>
-              <select value={role} onChange={(e) => setRole(e.target.value as CreateUserPayload['role'])}>
-                <option value="PROJECT_MANAGER">{formatRole('PROJECT_MANAGER', locale)}</option>
-                <option value="SITE_WORKER">{formatRole('SITE_WORKER', locale)}</option>
-              </select>
-            </label>
-
-            {actionError && (
-              <div className="alert alert-error">
-                {actionError instanceof Error ? actionError.message : t('users.updateFailed')}
-              </div>
-            )}
-
-            {successMessage && <div className="alert alert-success">{successMessage}</div>}
-
-            <button type="submit" className="btn btn-primary" disabled={createMutation.isPending}>
-              {createMutation.isPending ? t('users.creating') : t('users.create')}
-            </button>
-          </form>
-        </section>
-
-        <section className="section-block">
+      <section className="section-block">
           <div className="section-heading">
             <h2>{t('users.all')}</h2>
             <p>
@@ -304,8 +238,7 @@ export function UsersPage() {
               )
             })}
           </div>
-        </section>
-      </div>
+      </section>
     </div>
   )
 }

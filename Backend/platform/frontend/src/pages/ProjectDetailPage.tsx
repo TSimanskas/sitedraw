@@ -15,7 +15,7 @@ import {
 } from '../lib/format'
 import { getUser } from '../lib/auth'
 import { useI18n } from '../lib/LanguageContext'
-import type { ProjectMember, ProjectStatus, User } from '../types'
+import type { ProjectMember, ProjectStatus } from '../types'
 
 export function ProjectDetailPage() {
   const { projectId = '' } = useParams()
@@ -27,7 +27,6 @@ export function ProjectDetailPage() {
 
   const [title, setTitle] = useState('')
   const [selectedFileName, setSelectedFileName] = useState<string | null>(null)
-  const [selectedUserId, setSelectedUserId] = useState('')
   const [documentQuery, setDocumentQuery] = useState('')
   const versionInputRef = useRef<HTMLInputElement>(null)
   const [versionTargetId, setVersionTargetId] = useState<string | null>(null)
@@ -81,12 +80,6 @@ export function ProjectDetailPage() {
     return true
   }
 
-  const assignableQuery = useQuery({
-    queryKey: ['assignable-users', projectId],
-    queryFn: () => api.listAssignableUsers(projectId),
-    enabled: Boolean(projectId) && canManageTeam,
-  })
-
   const uploadMutation = useMutation({
     mutationFn: (file: File) => api.uploadDocument(projectId, file, title || undefined),
     onSuccess: () => {
@@ -99,37 +92,10 @@ export function ProjectDetailPage() {
     },
   })
 
-  const assignMutation = useMutation({
-    mutationFn: (userId: string) => api.assignMember(projectId, userId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['project', projectId] })
-      queryClient.invalidateQueries({ queryKey: ['assignable-users', projectId] })
-      setSelectedUserId('')
-    },
-  })
-
   const removeMutation = useMutation({
     mutationFn: (userId: string) => api.removeMember(projectId, userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project', projectId] })
-      queryClient.invalidateQueries({ queryKey: ['assignable-users', projectId] })
-    },
-  })
-
-  const reactivateMutation = useMutation({
-    mutationFn: async (assignableUser: User) => {
-      await api.updateUser(assignableUser.id, {
-        fullName: assignableUser.fullName,
-        role: assignableUser.role,
-        active: true,
-      })
-      return api.assignMember(projectId, assignableUser.id)
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['project', projectId] })
-      queryClient.invalidateQueries({ queryKey: ['assignable-users', projectId] })
-      queryClient.invalidateQueries({ queryKey: ['users'] })
-      setSelectedUserId('')
     },
   })
 
@@ -178,14 +144,6 @@ export function ProjectDetailPage() {
     uploadMutation.mutate(file)
   }
 
-  function handleAssignMember(event: FormEvent) {
-    event.preventDefault()
-    if (!selectedUserId) {
-      return
-    }
-    assignMutation.mutate(selectedUserId)
-  }
-
   function handleRemoveMember(member: ProjectMember) {
     if (!window.confirm(t('team.removeConfirm', { name: member.fullName }))) {
       return
@@ -226,10 +184,6 @@ export function ProjectDetailPage() {
     }
     deleteDocumentMutation.mutate(documentId)
   }
-
-  const assignableUsers = assignableQuery.data ?? []
-  const activeAssignableUsers = assignableUsers.filter((assignableUser) => assignableUser.active !== false)
-  const inactiveAssignableUsers = assignableUsers.filter((assignableUser) => assignableUser.active === false)
 
   return (
     <div className="page">
@@ -341,95 +295,6 @@ export function ProjectDetailPage() {
               <p>{members.length === 1 ? t('team.countOne') : t('team.count', { count: members.length })}</p>
             </div>
 
-            {canManageTeam && (
-              <form className="stack-form" onSubmit={handleAssignMember}>
-                <div className="form-row">
-                  <label className="field">
-                    <span>{t('team.addMember')}</span>
-                    <select
-                      value={selectedUserId}
-                      onChange={(e) => setSelectedUserId(e.target.value)}
-                      required
-                      disabled={activeAssignableUsers.length === 0}
-                    >
-                      <option value="">
-                        {activeAssignableUsers.length === 0 ? t('team.noActiveUsers') : t('team.selectUser')}
-                      </option>
-                      {activeAssignableUsers.map((assignableUser) => (
-                        <option key={assignableUser.id} value={assignableUser.id}>
-                          {assignableUser.fullName} ({assignableUser.email}) · {formatRole(assignableUser.role, locale)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <div className="form-actions align-start">
-                    <button
-                      type="submit"
-                      className="btn btn-primary"
-                      disabled={assignMutation.isPending || activeAssignableUsers.length === 0}
-                    >
-                      {assignMutation.isPending ? t('team.adding') : t('team.addToProject')}
-                    </button>
-                  </div>
-                </div>
-
-                {assignableQuery.error && (
-                  <div className="alert alert-error">
-                    {assignableQuery.error instanceof Error
-                      ? assignableQuery.error.message
-                      : t('team.loadPeopleFailed')}
-                  </div>
-                )}
-
-                {inactiveAssignableUsers.length > 0 && (
-                  <div className="alert alert-warning">
-                    <p>
-                      {inactiveAssignableUsers.length === 1
-                        ? t('team.inactiveOne', {
-                            names: inactiveAssignableUsers.map((assignableUser) => assignableUser.fullName).join(', '),
-                          })
-                        : t('team.inactiveMany', {
-                            names: inactiveAssignableUsers.map((assignableUser) => assignableUser.fullName).join(', '),
-                          })}
-                    </p>
-                    {user?.role === 'DIRECTOR' ? (
-                      <div className="form-actions align-start">
-                        {inactiveAssignableUsers.map((assignableUser) => (
-                          <button
-                            key={assignableUser.id}
-                            type="button"
-                            className="btn btn-secondary btn-sm"
-                            disabled={reactivateMutation.isPending}
-                            onClick={() => reactivateMutation.mutate(assignableUser)}
-                          >
-                            {reactivateMutation.isPending
-                              ? t('team.adding')
-                              : t('team.reactivateAndAdd', { name: assignableUser.fullName })}
-                          </button>
-                        ))}
-                      </div>
-                    ) : (
-                      <p>{t('team.askDirector')}</p>
-                    )}
-                  </div>
-                )}
-
-                {assignMutation.error && (
-                  <div className="alert alert-error">
-                    {assignMutation.error instanceof Error ? assignMutation.error.message : t('team.addFailed')}
-                  </div>
-                )}
-
-                {reactivateMutation.error && (
-                  <div className="alert alert-error">
-                    {reactivateMutation.error instanceof Error
-                      ? reactivateMutation.error.message
-                      : t('team.reactivateFailed')}
-                  </div>
-                )}
-              </form>
-            )}
-
             {removeMutation.error && (
               <div className="alert alert-error">
                 {removeMutation.error instanceof Error ? removeMutation.error.message : t('team.removeFailed')}
@@ -439,7 +304,7 @@ export function ProjectDetailPage() {
             {members.length === 0 ? (
               <EmptyState
                 title={t('team.emptyTitle')}
-                description={canManageTeam ? t('team.emptyManage') : t('team.emptyView')}
+                description={t('team.emptyView')}
               />
             ) : (
               <div className="user-list">
