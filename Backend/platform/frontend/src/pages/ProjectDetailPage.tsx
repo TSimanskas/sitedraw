@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent, Fragment } from 'react'
+import { useEffect, useRef, useState, type FormEvent, Fragment, type KeyboardEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { EmptyState } from '../components/EmptyState'
@@ -15,7 +15,8 @@ import {
 } from '../lib/format'
 import { getUser } from '../lib/auth'
 import { useI18n } from '../lib/LanguageContext'
-import type { ProjectMember, ProjectStatus } from '../types'
+import type { Locale } from '../lib/i18n'
+import type { ProjectMember, ProjectStatus, User } from '../types'
 
 export function ProjectDetailPage() {
   const { projectId = '' } = useParams()
@@ -32,6 +33,7 @@ export function ProjectDetailPage() {
   const [versionTargetId, setVersionTargetId] = useState<string | null>(null)
   const [historyDocumentId, setHistoryDocumentId] = useState<string | null>(null)
 
+  const [selectedMemberId, setSelectedMemberId] = useState('')
   const [isEditing, setIsEditing] = useState(false)
   const [editName, setEditName] = useState('')
   const [editSiteAddress, setEditSiteAddress] = useState('')
@@ -67,6 +69,12 @@ export function ProjectDetailPage() {
     user?.role === 'DIRECTOR' ||
     (user?.role === 'PROJECT_MANAGER' && members.some((m) => m.userId === user.id))
 
+  const assignableQuery = useQuery({
+    queryKey: ['assignable-users', projectId],
+    queryFn: () => api.listAssignableUsers(projectId),
+    enabled: Boolean(projectId) && canManageTeam,
+  })
+
   function canRemoveMember(member: ProjectMember) {
     if (!canManageTeam || !user) {
       return false
@@ -96,6 +104,32 @@ export function ProjectDetailPage() {
     mutationFn: (userId: string) => api.removeMember(projectId, userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project', projectId] })
+      queryClient.invalidateQueries({ queryKey: ['assignable-users', projectId] })
+    },
+  })
+
+  const assignMutation = useMutation({
+    mutationFn: (userId: string) => api.assignMember(projectId, userId),
+    onSuccess: () => {
+      setSelectedMemberId('')
+      queryClient.invalidateQueries({ queryKey: ['project', projectId] })
+      queryClient.invalidateQueries({ queryKey: ['assignable-users', projectId] })
+    },
+  })
+
+  const reactivateMutation = useMutation({
+    mutationFn: async (person: User) => {
+      await api.updateUser(person.id, {
+        fullName: person.fullName,
+        role: person.role,
+        active: true,
+      })
+      return api.assignMember(projectId, person.id)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project', projectId] })
+      queryClient.invalidateQueries({ queryKey: ['assignable-users', projectId] })
+      queryClient.invalidateQueries({ queryKey: ['users'] })
     },
   })
 
@@ -295,16 +329,41 @@ export function ProjectDetailPage() {
               <p>{members.length === 1 ? t('team.countOne') : t('team.count', { count: members.length })}</p>
             </div>
 
-            {removeMutation.error && (
+            {canManageTeam && (
+              <TeamAddForm
+                people={assignableQuery.data ?? []}
+                loading={assignableQuery.isLoading}
+                loadFailed={assignableQuery.isError}
+                selectedUserId={selectedMemberId}
+                onSelect={setSelectedMemberId}
+                adding={assignMutation.isPending}
+                reactivatingId={reactivateMutation.isPending ? reactivateMutation.variables?.id : undefined}
+                canReactivate={user?.role === 'DIRECTOR'}
+                onAdd={(event) => {
+                  event.preventDefault()
+                  if (!selectedMemberId) return
+                  assignMutation.mutate(selectedMemberId)
+                }}
+                onReactivate={(person) => reactivateMutation.mutate(person)}
+              />
+            )}
+
+            {(removeMutation.error || assignMutation.error || reactivateMutation.error) && (
               <div className="alert alert-error">
-                {removeMutation.error instanceof Error ? removeMutation.error.message : t('team.removeFailed')}
+                {removeMutation.error instanceof Error
+                  ? removeMutation.error.message
+                  : assignMutation.error instanceof Error
+                    ? assignMutation.error.message
+                    : reactivateMutation.error instanceof Error
+                      ? reactivateMutation.error.message
+                      : t('team.addFailed')}
               </div>
             )}
 
             {members.length === 0 ? (
               <EmptyState
                 title={t('team.emptyTitle')}
-                description={t('team.emptyView')}
+                description={canManageTeam ? t('team.emptyManage') : t('team.emptyView')}
               />
             ) : (
               <div className="user-list">
@@ -558,4 +617,197 @@ export function ProjectDetailPage() {
       )}
     </div>
   )
+}
+
+function TeamAddForm({
+  people,
+  loading,
+  loadFailed,
+  selectedUserId,
+  onSelect,
+  adding,
+  reactivatingId,
+  canReactivate,
+  onAdd,
+  onReactivate,
+}: {
+  people: User[]
+  loading: boolean
+  loadFailed: boolean
+  selectedUserId: string
+  onSelect: (userId: string) => void
+  adding: boolean
+  reactivatingId?: string
+  canReactivate: boolean
+  onAdd: (event: FormEvent) => void
+  onReactivate: (person: User) => void
+}) {
+  const { t, locale } = useI18n()
+  const pickerRef = useRef<HTMLDivElement>(null)
+  const [query, setQuery] = useState('')
+  const [open, setOpen] = useState(false)
+  const [highlight, setHighlight] = useState(0)
+  const activePeople = people.filter((person) => person.active !== false)
+  const inactivePeople = people.filter((person) => person.active === false)
+  const inactiveNames = inactivePeople.map((person) => person.fullName).join(', ')
+  const selected = activePeople.find((person) => person.id === selectedUserId)
+  const showingSelection = Boolean(selected && query === memberLabel(selected, locale))
+  const matches = activePeople.filter(
+    (person) => showingSelection || matchesName(person.fullName, query),
+  )
+  const disabled = loading || activePeople.length === 0
+
+  useEffect(() => {
+    if (!selectedUserId) {
+      setQuery('')
+    }
+  }, [selectedUserId])
+
+  useEffect(() => {
+    function handlePointerDown(event: MouseEvent) {
+      if (!pickerRef.current?.contains(event.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handlePointerDown)
+    return () => document.removeEventListener('mousedown', handlePointerDown)
+  }, [])
+
+  function choose(person: User) {
+    onSelect(person.id)
+    setQuery(memberLabel(person, locale))
+    setOpen(false)
+  }
+
+  function handleQueryChange(value: string) {
+    setQuery(value)
+    setHighlight(0)
+    setOpen(true)
+    if (selected && value !== memberLabel(selected, locale)) {
+      onSelect('')
+    }
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (disabled) return
+    if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      setOpen(true)
+      setHighlight((index) => Math.min(index + 1, Math.max(matches.length - 1, 0)))
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      setOpen(true)
+      setHighlight((index) => Math.max(index - 1, 0))
+    } else if (event.key === 'Enter' && open && matches[highlight]) {
+      event.preventDefault()
+      choose(matches[highlight])
+    } else if (event.key === 'Escape') {
+      setOpen(false)
+    }
+  }
+
+  return (
+    <div className="team-add-block">
+      {loadFailed && <div className="alert alert-error">{t('team.loadPeopleFailed')}</div>}
+      <form className="team-add" onSubmit={onAdd}>
+        <div className="team-add-field team-picker" ref={pickerRef}>
+          <label>
+            <span className="sr-only">{t('team.addMember')}</span>
+            <input
+              role="combobox"
+              aria-expanded={open}
+              aria-controls="team-member-options"
+              aria-autocomplete="list"
+              value={query}
+              placeholder={
+                loading ? t('common.loading') : activePeople.length === 0 ? t('team.noActiveUsers') : t('team.searchUser')
+              }
+              disabled={disabled}
+              onChange={(event) => handleQueryChange(event.target.value)}
+              onFocus={() => {
+                if (!disabled) setOpen(true)
+              }}
+              onKeyDown={handleKeyDown}
+            />
+          </label>
+          <button
+            type="button"
+            className="team-picker-toggle"
+            aria-label={t('team.selectUser')}
+            disabled={disabled}
+            onClick={() => setOpen((current) => !current)}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          {open && !disabled && (
+            <ul className="team-picker-menu" id="team-member-options" role="listbox">
+              {matches.length === 0 ? (
+                <li className="team-picker-empty">{t('team.noMatch')}</li>
+              ) : (
+                matches.map((person, index) => (
+                  <li key={person.id}>
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={person.id === selectedUserId}
+                      className={index === highlight ? 'is-active' : undefined}
+                      onMouseEnter={() => setHighlight(index)}
+                      onClick={() => choose(person)}
+                    >
+                      {memberLabel(person, locale)}
+                    </button>
+                  </li>
+                ))
+              )}
+            </ul>
+          )}
+        </div>
+        <button type="submit" className="btn btn-primary btn-sm" disabled={adding || !selectedUserId}>
+          {adding ? t('team.adding') : t('team.addToProject')}
+        </button>
+      </form>
+      {inactivePeople.length > 0 && (
+        <div className="alert alert-warning">
+          <p>
+            {inactivePeople.length === 1
+              ? t('team.inactiveOne', { names: inactiveNames })
+              : t('team.inactiveMany', { names: inactiveNames })}
+          </p>
+          {canReactivate ? (
+            <div className="team-add-inactive">
+              {inactivePeople.map((person) => (
+                <button
+                  key={person.id}
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  disabled={reactivatingId === person.id}
+                  onClick={() => onReactivate(person)}
+                >
+                  {t('team.reactivateAndAdd', { name: person.fullName })}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p>{t('team.askDirector')}</p>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function memberLabel(person: User, locale: Locale) {
+  return `${person.fullName} · ${formatRole(person.role, locale)}`
+}
+
+function matchesName(name: string, query: string) {
+  const needle = fold(query.trim())
+  if (!needle) return true
+  return fold(name).includes(needle)
+}
+
+function fold(value: string) {
+  return value.toLocaleLowerCase().normalize('NFD').replace(/\p{M}/gu, '')
 }

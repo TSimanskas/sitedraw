@@ -66,24 +66,33 @@ export function UsersPage() {
     setSuccessMessage(null)
   }
 
-  function startEdit(user: User) {
-    setEditingUserId(user.id)
-    setEditFullName(user.fullName)
-    setEditRole(user.role)
+  function toggleEdit(user: User) {
+    setSuccessMessage(null)
     setResetUserId(null)
     setResetPassword('')
     setResetError(null)
     setRevealedUserId(null)
-    setSuccessMessage(null)
+    if (editingUserId === user.id) {
+      setEditingUserId(null)
+      return
+    }
+    setEditingUserId(user.id)
+    setEditFullName(user.fullName)
+    setEditRole(user.role)
   }
 
-  function startReset(userId: string) {
-    setResetUserId(userId)
-    setResetPassword('')
-    setResetError(null)
+  function toggleReset(userId: string) {
+    setSuccessMessage(null)
     setEditingUserId(null)
     setRevealedUserId(null)
-    setSuccessMessage(null)
+    setResetError(null)
+    if (resetUserId === userId) {
+      setResetUserId(null)
+      setResetPassword('')
+      return
+    }
+    setResetUserId(userId)
+    setResetPassword('')
   }
 
   const users = usersQuery.data ?? []
@@ -151,12 +160,22 @@ export function UsersPage() {
                         </button>
                       )}
                       {!isDirector && (
-                        <button type="button" className="btn btn-secondary btn-sm" onClick={() => startEdit(user)}>
-                          {t('common.edit')}
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          aria-expanded={isEditing}
+                          onClick={() => toggleEdit(user)}
+                        >
+                          {isEditing ? t('common.cancel') : t('common.edit')}
                         </button>
                       )}
-                      <button type="button" className="btn btn-secondary btn-sm" onClick={() => startReset(user.id)}>
-                        {t('users.resetPassword')}
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        aria-expanded={isResetting}
+                        onClick={() => toggleReset(user.id)}
+                      >
+                        {isResetting ? t('common.cancel') : t('users.resetPassword')}
                       </button>
                       {!isDirector && !isSelf && (
                         <button

@@ -62,6 +62,11 @@ export function ForgotPasswordPage() {
           </div>
           <h1>SiteDraw</h1>
           <p className="auth-tagline">{t('login.tagline')}</p>
+          <ul className="auth-features">
+            <li>{t('login.feature.workspace')}</li>
+            <li>{t('login.feature.pdf')}</li>
+            <li>{t('login.feature.roles')}</li>
+          </ul>
         </div>
       </aside>
 
